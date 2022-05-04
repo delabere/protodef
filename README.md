@@ -8,7 +8,9 @@ If you have your cursor on a proto message type definition in a `*.proto` file, 
 It will only search for `proto` files in the `proto/` directory of your project, and `go` files in the `handler/` directory
 
 # SETUP
-Install it:
+Install [ripgrep](https://github.com/BurntSushi/ripgrep) if you don't have it
+
+Install this plugin:
 `Plug 'delabere/protodef'`
     
 Use it:
