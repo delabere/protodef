@@ -12,10 +12,10 @@ Install it:
 `Plug 'delabere/protodef'`
     
 Use it:
-`:protodef`
+`:Protodef`
 
 Optionally you can map protodef to a keybind like so:
-`nmap gp :protodef<CR>`
+`nmap gp :Protodef<CR>`
 
 # USAGE
 Put your cursor on a proto message type and use `:protodef` or your mapping. Simple as that!
