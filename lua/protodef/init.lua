@@ -16,14 +16,14 @@ M.protodef = function()
     -- and what kind of file we are in
     local current_file = vim.fn.expand('%')
     local filename, line_number
-
+    
     if string.match(current_file, ".*proto$") ~= nil then
-        local result = vim.fn.systemlist("rg 'func.*ctx.*"..current_word.."' -g 'handler/*.go' -n --column")
+        local result = vim.fn.systemlist("rg 'func.*ctx.*"..current_word.."' -g '*.go' -n --column")
         local rg_last_line = result[#result]
         if rg_last_line == nil then print("not an existing proto message type") return end
         filename, line_number= rg_parse(rg_last_line)
     elseif string.match(current_file, ".*go$") ~= nil then
-        local result = vim.fn.systemlist("rg 'message "..current_word.."' -g 'proto/*.proto' -n --column")
+        local result = vim.fn.systemlist("rg 'message "..current_word.."' -g '*.proto' -n --column")
         local rg_last_line = result[#result]
         if rg_last_line == nil then print("not an existing proto message type") return end
         filename, line_number = rg_parse(rg_last_line)
