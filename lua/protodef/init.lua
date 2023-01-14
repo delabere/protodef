@@ -1,7 +1,7 @@
 local M = {}
 
 -- local buffer_text = vim.call('getline', 1, '$')
-print("buffer text", P(buffer_text))
+-- print("buffer text", P(buffer_text))
 -- protodef will take you to proto definition for the message if you are in a proto file
 -- or the handler usage of the message if you are in a proto file
 M.protodef = function()
@@ -16,18 +16,32 @@ M.protodef = function()
     local filename, line_number, col
     -- if we are in a proto file, find the handlerfunc
     if string.match(current_file, ".*proto$") ~= nil then
-        local result = vim.fn.systemlist("rg 'func.*ctx.*" .. current_word .. "' -g '*.go' -n --column")
+        --print("pwd", vim.fn.getcwd())
+        print(current_file)
+        local service = string.match(current_file, "(.-)/")
+        print("service", service)
+        local search_path = vim.fn.resolve(vim.fn.getcwd() .. "/" .. service)
+        print("search path", search_path)
+        local rg_search = "rg '" .. current_word .. "' '" .. search_path .. "' -g '*.go' -n --column"
+
+        print(rg_search)
+
+        print("rg", rg_search)
+
+        local result = vim.fn.systemlist(rg_search)
+        -- local result = vim.fn.systemlist("rg 'func.*ctx.*" .. current_word .. "' -g '*.go' -n --column")
         local rg_last_line = result[#result]
         if rg_last_line == nil then print("not an existing proto message type") return end
         filename, line_number = M.rg_parse(rg_last_line)
         -- if we are in a go file, find the proto func
+
+
     elseif string.match(current_file, ".*go$") ~= nil then
         -- the text in the buffer, used later to grab the import line
         local buffer_text_1 = vim.api.nvim_buf_get_lines(0, 0, -1, false)
         local buffer_text = table.concat(buffer_text_1, "\n")
         local import_alias = M.import_alias(current_word)
 
-        --print("pwd", vim.fn.getcwd())
 
         print("import alias", import_alias)
         local import_alias_regex = import_alias .. ' .-wearedev/(service.-)["\\]'
@@ -59,6 +73,10 @@ M.protodef = function()
     -- open the file at the given line number
     vim.cmd(":e +" .. line_number .. " " .. filename)
 
+    if col == nil then
+        local line = vim.call('getline', '.')
+        col = string.find(line, current_word)
+    end
     -- move the cursor along to the beggining of the word
     vim.cmd(":call cursor(" .. line_number .. "," .. col .. ")")
 end
@@ -73,6 +91,12 @@ M.message_name = function(cWord)
     local clean_cWord = string.gsub(cWord, "[*\\){}]", "")
     local import_alias = string.match(clean_cWord, "%.(.*)")
     return import_alias
+end
+
+M.message_clean = function(cWord)
+    print("cword", cWord)
+    local word = string.match(cWord, "message (.*)")
+    return word
 end
 
 -- rg_parse gets the filename and line_number from the result
