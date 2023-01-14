@@ -82,13 +82,13 @@ M.protodef = function()
 end
 
 M.import_alias = function(cWord)
-    local clean_cWord = string.gsub(cWord, "[*\\){}]", "")
+    local clean_cWord = string.gsub(cWord, "[*\\){}\\(\\),]", "")
     local import_alias = string.match(clean_cWord, "(.*)%.")
     return import_alias
 end
 
 M.message_name = function(cWord)
-    local clean_cWord = string.gsub(cWord, "[*\\){}]", "")
+    local clean_cWord = string.gsub(cWord, "[*\\){},]", "")
     local import_alias = string.match(clean_cWord, "%.(.*)")
     return import_alias
 end

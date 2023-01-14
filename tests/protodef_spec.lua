@@ -15,13 +15,18 @@ describe("protodef", function()
     it("test ripgrep parsing ripgrep output", function()
         local test_rg = "/Users/jackrickards/src/github.com/monzo/wearedev/service.pot/proto/pot.proto:301:1:message GETBalanceRequest {"
         local fn, ln, cn = require("protodef").rg_parse(test_rg)
-        assert.equals('proto/pot.proto', fn)
+        assert.equals('/Users/jackrickards/src/github.com/monzo/wearedev/service.pot/proto/pot.proto', fn)
         assert.equals('301', ln)
         assert.equals(9, cn)
     end)
 
     it("get the import alias from the cWORD when in go-file", function()
         local cWord = "*potproto.GETBalanceRequest)"
+        assert.equals('potproto', require("protodef").import_alias(cWord))
+    end)
+
+    it("get the import alias from the cWORD when in go-file", function()
+        local cWord = "(*potproto.GETBalanceRequest,"
         assert.equals('potproto', require("protodef").import_alias(cWord))
     end)
 
