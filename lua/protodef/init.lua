@@ -16,14 +16,14 @@ M.protodef = function()
     -- and what kind of file we are in
     local current_file = vim.fn.expand('%')
     local filename, line_number
-    
+
     if string.match(current_file, ".*proto$") ~= nil then
-        local result = vim.fn.systemlist("rg 'func.*ctx.*"..current_word.."' -g '*.go' -n --column")
+        local result = vim.fn.systemlist("rg 'func.*ctx.*" .. current_word .. "' -g '*.go' -n --column")
         local rg_last_line = result[#result]
         if rg_last_line == nil then print("not an existing proto message type") return end
-        filename, line_number= rg_parse(rg_last_line)
+        filename, line_number = rg_parse(rg_last_line)
     elseif string.match(current_file, ".*go$") ~= nil then
-        local result = vim.fn.systemlist("rg 'message "..current_word.."' -g '*.proto' -n --column")
+        local result = vim.fn.systemlist("rg 'message " .. current_word .. "' -g '*.proto' -n --column")
         local rg_last_line = result[#result]
         if rg_last_line == nil then print("not an existing proto message type") return end
         filename, line_number = rg_parse(rg_last_line)
@@ -34,7 +34,7 @@ M.protodef = function()
     end
 
     -- open the file at the given line number
-    vim.cmd(":e +"..line_number.." "..filename)
+    vim.cmd(":e +" .. line_number .. " " .. filename)
 
     -- check the line under the cursor
     local line = vim.call('getline', '.')
@@ -42,17 +42,17 @@ M.protodef = function()
     -- get the column and go straight to it
     -- we need to do this because ripgrep won't give us the columns we need
     local column = string.find(line, current_word)
-    vim.cmd(":call cursor("..line_number..","..column..")")
+    vim.cmd(":call cursor(" .. line_number .. "," .. column .. ")")
 end
 
 
 -- just a functin to test that the rg_parse function is working nicely
-local test = function()
-    local test_rg = "proto/potsavingsprovider.proto:590:9:message GETRateHistoryResponse{"
-    local filename, line_number, column_number = rg_parse(test_rg)
+M.test = function(line)
+    local filename, line_number, column_number = rg_parse(line)
     print("filename:", filename)
     print("line_number:", line_number)
     print("column_number:", column_number)
+    return filename, line_number, column_number
 end
 
 return M
