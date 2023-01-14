@@ -68,11 +68,13 @@ M.protodef = function()
 
     -- open the file at the given line number
     vim.cmd(":e +" .. line_number .. " " .. filename)
+    local line = vim.call('getline', '.')
+    local tcol = string.find(line, current_word)
 
-    if col == nil then
-        local line = vim.call('getline', '.')
-        col = string.find(line, current_word)
+    if tcol ~= nil then
+        col = tcol
     end
+
     -- move the cursor along to the beggining of the word
     vim.cmd(":call cursor(" .. line_number .. "," .. col .. ")")
 end
