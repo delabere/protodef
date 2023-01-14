@@ -22,11 +22,7 @@ M.protodef = function()
         print("service", service)
         local search_path = vim.fn.resolve(vim.fn.getcwd() .. "/" .. service)
         print("search path", search_path)
-        local rg_search = "rg '" .. current_word .. "' '" .. search_path .. "' -g '*.go' -n --column"
-
-        print(rg_search)
-
-        print("rg", rg_search)
+        local rg_search = "rg 'func.*ctx.*" .. current_word .. "' '" .. search_path .. "' -g '*.go' -n --column"
 
         local result = vim.fn.systemlist(rg_search)
         -- local result = vim.fn.systemlist("rg 'func.*ctx.*" .. current_word .. "' -g '*.go' -n --column")
