@@ -27,17 +27,26 @@ M.protodef = function()
         local buffer_text = table.concat(buffer_text_1, "\n")
         local import_alias = M.import_alias(current_word)
 
-        local import_alias_regex = import_alias .. '.*wearedev/(.-)"\\n'
+        --print("pwd", vim.fn.getcwd())
+
+        print("import alias", import_alias)
+        local import_alias_regex = import_alias .. ' .-wearedev/(service.-)["\\]'
+        print("import alias regex", import_alias_regex)
         local import_line = string.match(vim.inspect(buffer_text), import_alias_regex)
+        print("import line", import_line)
 
         local message = M.message_name(current_word)
 
         local proto_path = vim.fn.resolve(vim.fn.getcwd() .. "/" .. import_line)
+        --print("proto path", proto_path)
 
         local rg_search = "rg 'message " .. message .. "' '" .. proto_path .. "' -g '*.proto' -n --column"
 
+        print("rg", rg_search)
+
         local result = vim.fn.systemlist(rg_search)
         local rg_last_line = result[#result]
+        print("lastline", rg_last_line)
 
         if rg_last_line == nil then print("not an existing proto message type") return end
         filename, line_number, col = M.rg_parse(rg_last_line)
@@ -55,13 +64,13 @@ M.protodef = function()
 end
 
 M.import_alias = function(cWord)
-    local clean_cWord = string.gsub(cWord, "[*\\)]", "")
+    local clean_cWord = string.gsub(cWord, "[*\\){}]", "")
     local import_alias = string.match(clean_cWord, "(.*)%.")
     return import_alias
 end
 
 M.message_name = function(cWord)
-    local clean_cWord = string.gsub(cWord, "[*\\)]", "")
+    local clean_cWord = string.gsub(cWord, "[*\\){}]", "")
     local import_alias = string.match(clean_cWord, "%.(.*)")
     return import_alias
 end
