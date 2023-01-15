@@ -63,13 +63,11 @@ M.parse_go = function(word)
 end
 
 M.parse_proto = function(file, word)
-    --print("pwd", vim.fn.getcwd())
     local service = string.match(file, "(.-)/")
     local search_path = vim.fn.resolve(vim.fn.getcwd() .. "/" .. service)
     local rg_search = "rg 'func.*ctx.*" .. word .. "' '" .. search_path .. "' -g '*.go' -n --column"
 
     local result = vim.fn.systemlist(rg_search)
-    -- local result = vim.fn.systemlist("rg 'func.*ctx.*" .. current_word .. "' -g '*.go' -n --column")
     local rg_last_line = result[#result]
     if rg_last_line == nil then print("not an existing proto message type") return end
     local filename, line_number = M.rg_parse(rg_last_line)
@@ -77,13 +75,13 @@ M.parse_proto = function(file, word)
 end
 
 M.import_alias = function(cWord)
-    local clean_cWord = string.gsub(cWord, "[*\\){}\\(\\),]", "")
+    local clean_cWord = string.gsub(cWord, "[*&\\){}\\(\\),]", "")
     local import_alias = string.match(clean_cWord, "(.*)%.")
     return import_alias
 end
 
 M.message_name = function(cWord)
-    local clean_cWord = string.gsub(cWord, "[*\\){},]", "")
+    local clean_cWord = string.gsub(cWord, "[*&\\){},]", "")
     local import_alias = string.match(clean_cWord, "%.(.*)")
     return import_alias
 end
@@ -99,17 +97,7 @@ end
 M.rg_parse = function(rip_grep_line)
     local filename = string.match(rip_grep_line, "(.+):%d+:%d+")
     local line_number = string.match(rip_grep_line, ":(%d+):")
-    --local column_number = string.match(rip_grep_line, ":%d+:(%d+):")
-    return filename, line_number, 9
+    return filename, line_number
 end
-
--- just a functin to test that the rg_parse function is working nicely
---M.test = function(line)
---    local filename, line_number, column_number = M.rg_parse(line)
---    print("filename:", filename)
---    print("line_number:", line_number)
---    print("column_number:", column_number)
---    return filename, line_number, column_number
---end
 
 return M
