@@ -6,9 +6,8 @@ M.protodef = function()
     -- we need to know what proto message we are looking for
     -- get the WORD under the cursor
     local current_word = vim.call('expand', '<cWORD>')
-    -- and what kind of file we are in
-    local current_file = vim.fn.expand('%')
-
+    -- get the full absolute path of the current file
+    local current_file = vim.fn.expand('%:p')
 
     local filename, line_number, col
     if string.match(current_file, ".*proto$") ~= nil then
@@ -42,17 +41,14 @@ M._parse_go = function(word)
     local buffer_text_1 = vim.api.nvim_buf_get_lines(0, 0, -1, false)
     local buffer_text = table.concat(buffer_text_1, "\n")
     local import_alias = M._import_alias(word)
+    local import_alias_regex = import_alias .. ' "(.-)"'
+    local import_line = string.match(buffer_text, import_alias_regex)
 
-
-    local import_alias_regex = import_alias .. ' .-wearedev/(service.-)["\\]'
-    local import_line = string.match(vim.inspect(buffer_text), import_alias_regex)
+    local merge_path = M._merge_paths(vim.fn.getcwd(), import_line)
 
     local message = M._message_name(word)
 
-    local proto_path = vim.fn.resolve(vim.fn.getcwd() .. "/" .. import_line)
-    --print("proto path", proto_path)
-
-    local rg_search = "rg 'message " .. message .. "' '" .. proto_path .. "' -g '*.proto' -n --column"
+    local rg_search = "rg 'message " .. message .. "' '" .. merge_path .. "' -g '*.proto' -n --column"
 
     local result = vim.fn.systemlist(rg_search)
     local rg_last_line = result[#result]
@@ -88,7 +84,6 @@ M._message_name = function(cWord)
 end
 
 M._message_clean = function(cWord)
-    print("cword", cWord)
     local word = string.match(cWord, "message (.*)")
     return word
 end
@@ -99,6 +94,34 @@ M._rg_parse = function(rip_grep_line)
     local filename = string.match(rip_grep_line, "(.+):%d+:%d+")
     local line_number = string.match(rip_grep_line, ":(%d+):")
     return filename, line_number
+end
+
+M._merge_paths = function(path1, path2)
+    local path1_parts = {}
+    for part in string.gmatch(path1, "[^/]+") do
+        path1_parts[#path1_parts + 1] = part
+    end
+    local path2_parts = {}
+    for part in string.gmatch(path2, "[^/]+") do
+        path2_parts[#path2_parts + 1] = part
+    end
+    local link_point
+    for i = 1, #path1_parts do
+        if path1_parts[i] == path2_parts[1] then
+            link_point = i
+        end
+    end
+
+    local result = {}
+    for i = 1, link_point do
+        result[i] = path1_parts[i]
+    end
+
+    for i = 1, #path2_parts do
+        result[i + link_point - 1] = path2_parts[i]
+    end
+
+    return "/" .. table.concat(result, "/")
 end
 
 return M
