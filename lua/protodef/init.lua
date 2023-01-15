@@ -1,66 +1,22 @@
 local M = {}
 
--- local buffer_text = vim.call('getline', 1, '$')
--- print("buffer text", P(buffer_text))
--- protodef will take you to proto definition for the message if you are in a proto file
+-- protodef will take you to proto definition for the message if you are in a go file
 -- or the handler usage of the message if you are in a proto file
 M.protodef = function()
     -- we need to know what proto message we are looking for
-    --local current_word = vim.call('expand', '<cword>')
+    -- get the WORD under the cursor
     local current_word = vim.call('expand', '<cWORD>')
-    print(current_word)
     -- and what kind of file we are in
     local current_file = vim.fn.expand('%')
 
 
     local filename, line_number, col
-    -- if we are in a proto file, find the handlerfunc
     if string.match(current_file, ".*proto$") ~= nil then
-        --print("pwd", vim.fn.getcwd())
-        print(current_file)
-        local service = string.match(current_file, "(.-)/")
-        print("service", service)
-        local search_path = vim.fn.resolve(vim.fn.getcwd() .. "/" .. service)
-        print("search path", search_path)
-        local rg_search = "rg 'func.*ctx.*" .. current_word .. "' '" .. search_path .. "' -g '*.go' -n --column"
-
-        local result = vim.fn.systemlist(rg_search)
-        -- local result = vim.fn.systemlist("rg 'func.*ctx.*" .. current_word .. "' -g '*.go' -n --column")
-        local rg_last_line = result[#result]
-        if rg_last_line == nil then print("not an existing proto message type") return end
-        filename, line_number = M.rg_parse(rg_last_line)
-        -- if we are in a go file, find the proto func
-
-
+        -- if we are in a proto file, find the handler function
+        filename, line_number = M.parse_proto(current_file, current_word)
     elseif string.match(current_file, ".*go$") ~= nil then
-        -- the text in the buffer, used later to grab the import line
-        local buffer_text_1 = vim.api.nvim_buf_get_lines(0, 0, -1, false)
-        local buffer_text = table.concat(buffer_text_1, "\n")
-        local import_alias = M.import_alias(current_word)
-
-
-        print("import alias", import_alias)
-        local import_alias_regex = import_alias .. ' .-wearedev/(service.-)["\\]'
-        print("import alias regex", import_alias_regex)
-        local import_line = string.match(vim.inspect(buffer_text), import_alias_regex)
-        print("import line", import_line)
-
-        local message = M.message_name(current_word)
-
-        local proto_path = vim.fn.resolve(vim.fn.getcwd() .. "/" .. import_line)
-        --print("proto path", proto_path)
-
-        local rg_search = "rg 'message " .. message .. "' '" .. proto_path .. "' -g '*.proto' -n --column"
-
-        print("rg", rg_search)
-
-        local result = vim.fn.systemlist(rg_search)
-        local rg_last_line = result[#result]
-        print("lastline", rg_last_line)
-
-        if rg_last_line == nil then print("not an existing proto message type") return end
-        filename, line_number, col = M.rg_parse(rg_last_line)
-
+        -- we we are in the go file, find the proto message definition
+        filename, line_number, col = M.parse_go(current_word)
     else
         print("operation not supported for current filetype")
         return
@@ -68,6 +24,8 @@ M.protodef = function()
 
     -- open the file at the given line number
     vim.cmd(":e +" .. line_number .. " " .. filename)
+
+    -- after navigating to the ripgrep match, find out which char is the start of the token
     local line = vim.call('getline', '.')
     local tcol = string.find(line, current_word)
 
@@ -77,6 +35,45 @@ M.protodef = function()
 
     -- move the cursor along to the beggining of the word
     vim.cmd(":call cursor(" .. line_number .. "," .. col .. ")")
+end
+
+M.parse_go = function(word)
+    -- the text in the buffer, used later to grab the import line
+    local buffer_text_1 = vim.api.nvim_buf_get_lines(0, 0, -1, false)
+    local buffer_text = table.concat(buffer_text_1, "\n")
+    local import_alias = M.import_alias(word)
+
+
+    local import_alias_regex = import_alias .. ' .-wearedev/(service.-)["\\]'
+    local import_line = string.match(vim.inspect(buffer_text), import_alias_regex)
+
+    local message = M.message_name(word)
+
+    local proto_path = vim.fn.resolve(vim.fn.getcwd() .. "/" .. import_line)
+    --print("proto path", proto_path)
+
+    local rg_search = "rg 'message " .. message .. "' '" .. proto_path .. "' -g '*.proto' -n --column"
+
+    local result = vim.fn.systemlist(rg_search)
+    local rg_last_line = result[#result]
+
+    if rg_last_line == nil then print("not an existing proto message type") return end
+    local filename, line_number = M.rg_parse(rg_last_line)
+    return filename, line_number, 9
+end
+
+M.parse_proto = function(file, word)
+    --print("pwd", vim.fn.getcwd())
+    local service = string.match(file, "(.-)/")
+    local search_path = vim.fn.resolve(vim.fn.getcwd() .. "/" .. service)
+    local rg_search = "rg 'func.*ctx.*" .. word .. "' '" .. search_path .. "' -g '*.go' -n --column"
+
+    local result = vim.fn.systemlist(rg_search)
+    -- local result = vim.fn.systemlist("rg 'func.*ctx.*" .. current_word .. "' -g '*.go' -n --column")
+    local rg_last_line = result[#result]
+    if rg_last_line == nil then print("not an existing proto message type") return end
+    local filename, line_number = M.rg_parse(rg_last_line)
+    return filename, line_number
 end
 
 M.import_alias = function(cWord)
